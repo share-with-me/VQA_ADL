@@ -7,8 +7,6 @@
 - With the advent of deep learning, these seemingly intricate tasks have now become a possibility. 
 - In this project, we aspire to build models that help us build a visual question answering system.
 
-# Usage Steps
-
 
 # Models 
 - In this project, we experiment by implementing 4 models. 
