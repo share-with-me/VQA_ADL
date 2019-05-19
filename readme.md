@@ -7,6 +7,9 @@
 - With the advent of deep learning, these seemingly intricate tasks have now become a possibility. 
 - In this project, we aspire to build models that help us build a visual question answering system.
 
+# Dataset
+- We have used the MSCOCO VQA dataset for training the models.
+- The data is preprocessed and then used to build the training and test datasets.
 
 # Models 
 - In this project, we experiment by implementing 4 models. 
@@ -36,6 +39,32 @@
 
 
 # Observations, Analysis and Conclusions
+
+- We trained the above models with 30K examples and started with 30 epochs.
+- We observed that for each of the above models, in about 8 to 10 epochs, the learning rate decreased drastically. After roughly about 10 epochs, each of the models had similar values for loss and accuracy for the subsequent epochs.
+- Thus, we arrived at a conclusion that the models have reached an optimum in about 10 epochs.
+
+- Values after 10 epochs for each of the models.
+
+|   | Train Accuracy | Train Loss | Test Accuracy | Test Loss |
+| ------------- | ------------- | ------- | ------- | ------ |
+| Model 1  | 19.47 | 8.10 | 19.43 | 8.09 |
+| Model 2  | 19.40 | 8.11 | 19.43 | 8.09 |
+| Model 3  | 18.31 | 8.11 | 18.35 | 8.11 |
+| Model 4  | 22.49 | 4.07 | 24.57 | 4.09 |
+
+- For models 1 and 2, we see that the values for test and train accuracy and loss metrics are pretty much the same. We can conclude that both prepend and append of image as word before passing it through LSTM has a similar effect in the learning of the model.
+- For model 3, we see that the test and train loss values are very similar to that of models 1 and 2. However, the test and train accuracy values are slightly lower than that of the models 1 and 2. A possible reasoning could be that in model 3, we are treating the question tensor through RNN and the image passed through CNN separately. The model may not be learning the two of them when passed separately as efficiently as when they are passed as one input tensor like that of models 1 and 2.
+- For model 4, we see that the test and train accuracies are significantly better than the first 3 models. Similarly, the test and train loss values are much lower than the former models.
+- We can infer that the co-attention implementation plays a vital role in detecting the ‘relevant’ parts of the image and its associated pertinent parts in the input question. 
+- Since the model learns the identification of important parts of the image, it is now able to predict the answers to the questions more efficiently. 
+
+# Improvements and Future Work
+- As of now, we are looking at VQA as a classification problem, where the output is one of the answers found already in the training data. However, this does not help us build answers which are more complex in nature (for instance, combine phrases)
+- Thus, in the future variants, we intend to pass the output of our models into a language model (say an n-gram model), so as to be able to generate long and grammatically correct answers. 
+- As of now, majority of the answers in the training dataset are ‘yes’. We have treated the VQA problem as classification. Since the proportion of ‘yes’ answers is high, the models are inherently predicting ‘yes’ as the output. Thus, in the future, we will implement a balancing measure that normalizes the counts of different classes in the training data.
+- Lastly, we intend to implement data augmentation on the training data, so as to make the models robust enough to various orientations of the training images.
+
 
 # Sample Predictions
 
