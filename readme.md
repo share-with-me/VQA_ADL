@@ -67,4 +67,4 @@
 
 
 # Sample Predictions
-
+![Sample predictions](image.PNG)
