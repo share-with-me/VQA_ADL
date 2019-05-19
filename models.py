@@ -149,32 +149,30 @@ class CoattentionModel(tf.keras.Model):
     self.dense_final = Dense(len(ans_vocab), activation='relu', input_shape=(256,))
 
 
-  def affinity(self,image_feat,text_feat,g,prev_att):
-    V_ = self.dense_image(image_feat)
-    Q_ = self.dense_text(text_feat)
+  def affinity(self,image_feat,text_feat,level,prev_att):
+    img = self.dense_image(image_feat)
+    text = self.dense_text(text_feat)
 
-    if g==0:
-      return self.dropout_layer(self.tan_layer(Q_))
+    if level==0:
+      return self.dropout_layer(self.tan_layer(text))
 
-    elif g==1:
-      g = tf.expand_dims(self.dense_text(prev_att),1)
-      return self.dropout_layer(self.tan_layer(V_ + g))
-
-
-    elif g==2:
-      g = tf.expand_dims(self.dense_image(prev_att),1)
-      return self.dropout_layer(self.tan_layer( Q_ + g))
+    elif level==1:
+      level = tf.expand_dims(self.dense_text(prev_att),1)
+      return self.dropout_layer(self.tan_layer(img + level))
 
 
+    elif level==2:
+      level = tf.expand_dims(self.dense_image(prev_att),1)
+      return self.dropout_layer(self.tan_layer(text + level))
 
-  def attention_ques(self,text_feat,H_text):
-    temp = self.text_attention(H_text)
-    return tf.reduce_sum(temp * text_feat,1)
 
 
-  def attention_img(self,image_feat,H_img):
-    temp = self.image_attention(H_img)
-    return tf.reduce_sum(temp * image_feat,1)
+  def attention_ques(self,text_feat,text):
+    return tf.reduce_sum(self.text_attention(text) * text_feat,1)
+
+
+  def attention_img(self,image_feat,img):
+    return tf.reduce_sum(self.image_attention(img) * image_feat,1)
 
   def call(self,image_feat,question_encoding):
     # Processing the image
@@ -191,26 +189,18 @@ class CoattentionModel(tf.keras.Model):
   	#Apply attention to features on both the levels
 
     # Applying attention on word level features
-    word_H_text = self.affinity(image_feat,word_feat,0,0)
-    word_text_attention = self.attention_ques(word_feat,word_H_text)
-    word_H_img = self.affinity(image_feat,word_feat,1,word_text_attention)
-    word_img_attention = self.attention_img(image_feat,word_H_img)
-    word_H_text = self.affinity(image_feat,word_feat,2,word_img_attention)
-    word_text_attention = self.attention_ques(word_feat,word_H_text)
+    word_text_attention = self.attention_ques(word_feat, self.affinity(image_feat,word_feat,0,0))
+    word_img_attention = self.attention_img(image_feat, self.affinity(image_feat,word_feat,1,word_text_attention))
+    word_text_attention = self.attention_ques(word_feat, self.affinity(image_feat,word_feat,2,word_img_attention))
 
-    word_level_attention = word_img_attention + word_text_attention
-    word_pred = self.dropout_layer(self.tan_layer(self.dense_word_level(word_level_attention)))
+    word_pred = self.dropout_layer(self.tan_layer(self.dense_word_level(word_img_attention + word_text_attention)))
 
     # Applying attention on sentence level features
-    sent_H_text = self.affinity(image_feat,sent_feat,0,0)
-    sent_text_attention = self.attention_ques(sent_feat,sent_H_text)
-    sent_H_img = self.affinity(image_feat,sent_feat,1,sent_text_attention)
-    sent_img_attention = self.attention_img(image_feat,sent_H_img)
-    sent_H_text = self.affinity(image_feat,sent_feat,2,sent_img_attention)
-    sent_text_attention = self.attention_ques(sent_feat,sent_H_text)
+    sent_text_attention = self.attention_ques(sent_feat,self.affinity(image_feat,sent_feat,0,0))
+    sent_img_attention = self.attention_img(image_feat,self.affinity(image_feat,sent_feat,1,sent_text_attention))
+    sent_text_attention = self.attention_ques(sent_feat,self.affinity(image_feat,sent_feat,2,sent_img_attention))
 
-    sentence_level_attention = tf.concat([sent_img_attention + sent_text_attention, word_pred],-1)
-    sent_pred = self.dropout_layer(self.tan_layer(self.dense_sent_level(sentence_level_attention)))
+    sent_pred = self.dropout_layer(self.tan_layer(self.dense_sent_level( tf.concat([sent_img_attention + sent_text_attention, word_pred],-1))))
 
 
     return self.dense_final(sent_pred)
